@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车辆违停记录系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .form-container {
+            padding: 30px 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .nav-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #4facfe;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            white-space: pre-line;
+            text-align: left;
+            line-height: 1.4;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* 成功弹窗样式 */
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .success-modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s ease;
+        }
+        
+        .success-modal-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease;
+        }
+        
+        .success-modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .success-modal-message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .success-modal-countdown {
+            font-size: 14px;
+            color: #4facfe;
+            font-weight: 600;
+        }
+        
+        .compressed-preview {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .multi-image-preview {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .preview-stats {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+        
+        .stat-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .total-original { color: #dc3545; }
+        .total-compressed { color: #28a745; }
+        .total-saved { color: #007bff; }
+        .total-ratio { color: #fd7e14; }
+        
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .image-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .image-item .preview-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .image-info {
+            font-size: 12px;
+        }
+        
+        .image-info .filename {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+        
+        .image-info .size-info {
+            color: #6c757d;
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .preview-header h4 {
+            margin: 0;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .remove-preview {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+        
+        .remove-preview:hover {
+            background: #c82333;
+        }
+        
+        .preview-content {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .preview-image {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            object-fit: cover;
+        }
+        
+        .preview-info {
+            flex: 1;
+        }
+        
+        .preview-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .preview-stats {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            display: block;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .stat-value.original {
+            color: #dc3545;
+        }
+        
+        .stat-value.compressed {
+            color: #28a745;
+        }
+        
+        .stat-arrow {
+            font-size: 20px;
+            color: #007bff;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        
+        .compression-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+        
+        .saved-space {
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .compression-badge {
+            text-align: center;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .success-modal-close {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 10px;
+        }
+        
+        .success-modal-close:hover {
+            transform: translateY(-2px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+        
+        .camera-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            margin-bottom: 20px;
+        }
+        
+        .license-plate-input {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 车辆违停记录</h1>
+            <p>记录违规停车，维护交通秩序</p>
+        </div>
+        
+        <div class="form-container">
+            <div id="message" class="message"></div>
+            
+            <form id="violationForm">
+                <div class="form-group">
+                    <label for="license_plate">车牌号码</label>
+                    <div style="display: flex; gap: 8px;">
+                        <!-- 第一格：省份中文 -->
+                        <select id="province_prefix" name="province_prefix" required 
+                                style="flex: 0 0 80px; font-size: 18px; font-weight: bold; text-align: center; padding: 12px; order: 1;"
+                                onchange="updateLicensePlateValidation()">
+                            <option value="京">京</option>
+                            <option value="津">津</option>
+                            <option value="冀">冀</option>
+                            <option value="晋">晋</option>
+                            <option value="蒙">蒙</option>
+                            <option value="辽">辽</option>
+                            <option value="吉">吉</option>
+                            <option value="黑">黑</option>
+                            <option value="沪">沪</option>
+                            <option value="苏">苏</option>
+                            <option value="浙">浙</option>
+                            <option value="皖">皖</option>
+                            <option value="闽">闽</option>
+                            <option value="赣">赣</option>
+                            <option value="鲁">鲁</option>
+                            <option value="豫">豫</option>
+                            <option value="鄂" selected>鄂</option>
+                            <option value="湘">湘</option>
+                            <option value="粤">粤</option>
+                            <option value="桂">桂</option>
+                            <option value="琼">琼</option>
+                            <option value="渝">渝</option>
+                            <option value="川">川</option>
+                            <option value="贵">贵</option>
+                            <option value="云">云</option>
+                            <option value="藏">藏</option>
+                            <option value="陕">陕</option>
+                            <option value="甘">甘</option>
+                            <option value="青">青</option>
+                            <option value="宁">宁</option>
+                            <option value="新">新</option>
+                            <option value="特殊">特殊车牌</option>
+                        </select>
+                        
+                        <!-- 第二格：英文字母下拉 -->
+                        <select id="letter_prefix" name="letter_prefix" required 
+                                style="flex: 0 0 70px; font-size: 18px; font-weight: bold; text-align: center; padding: 12px; order: 2;"
+                                onchange="updateLicensePlateValidation()">
+                            <option value="A" selected>A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="G">G</option>
+                            <option value="H">H</option>
+                            <option value="J">J</option>
+                            <option value="K">K</option>
+                            <option value="L">L</option>
+                            <option value="M">M</option>
+                            <option value="N">N</option>
+                            <option value="P">P</option>
+                            <option value="Q">Q</option>
+                            <option value="R">R</option>
+                            <option value="S">S</option>
+                            <option value="T">T</option>
+                            <option value="U">U</option>
+                            <option value="V">V</option>
+                            <option value="W">W</option>
+                            <option value="X">X</option>
+                            <option value="Y">Y</option>
+                            <option value="Z">Z</option>
+                        </select>
+                        
+                        <!-- 第三格：5-6位数字或字母 -->
+                        <input type="text" id="license_plate" name="license_plate" 
+                               class="license-plate-input" value="12345" required 
+                               style="flex: 1; font-size: 18px; font-weight: bold; text-align: center; text-transform: uppercase; order: 3;"
+                               oninput="updateLicensePlateValidation()"
+                               onkeypress="return validateKeyPress(event)"
+                               maxlength="6"
+                               placeholder="12345"
+                               onfocus="this.select()">
+                    </div>
+                    <div id="plateHelp" style="font-size: 12px; color: #666; margin-top: 5px;">
+                        请输入5-6位数字或字母大写（如：12345或A1B2C3）
+                    </div>
+                </div>
+                
+
+                
+                <div class="form-group">
+                    <label for="location">违停地点</label>
+                    <input type="text" id="location" name="location" 
+                           placeholder="Please input 具体违停地点" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="violation_time">违规时间</label>
+                    <input type="datetime-local" id="violation_time" name="violation_time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="violation_type">违停类型</label>
+                    <select id="violation_type" name="violation_type" required>
+                        <option value="">Please select 违停类型</option>
+                        <option value="占用消防通道">占用消防通道</option>
+                        <option value="占用人行道">占用人行道</option>
+                        <option value="逆向停车">逆向停车</option>
+                        <option value="压线停车">压线停车</option>
+                        <option value="禁止停车区域">禁止停车区域</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                
+
+                
+                <div class="form-group">
+                    <label for="description">详细描述</label>
+                    <textarea id="description" name="description" 
+                              placeholder="Please describe 违停的具体情况..."></textarea>
+                </div>
+                
+                <input type="file" id="photoInput" name="photo" accept="image/*" multiple style="display: none;" onchange="handlePhotoSelect(this)">
+                
+                <button type="button" class="btn camera-btn" onclick="document.getElementById('photoInput').click()">
+                    📷 选择照片
+                </button>
+                
+                <!-- 添加上传按钮 -->
+                <button type="button" class="btn upload-btn" id="uploadButton" onclick="uploadSelectedPhotos()" style="display: none; background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                    📤 上传照片
+                </button>
+                
+                <button type="submit" class="btn">
+                    提交违停记录
+                </button>
+            </form>
+            
+            <a href="/" class="nav-link">← 返回记录列表</a>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时恢复之前的车牌号和设置默认时间
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedPlate = localStorage.getItem('lastLicensePlate');
+            const savedProvince = localStorage.getItem('lastProvince');
+            const savedLetter = localStorage.getItem('lastLetter');
+            
+            if (savedPlate && savedProvince) {
+                document.getElementById('license_plate').value = savedPlate;
+                document.getElementById('province_prefix').value = savedProvince;
+                
+                if (savedLetter) {
+                    document.getElementById('letter_prefix').value = savedLetter;
+                }
+                
+                updateLicensePlateValidation();
+            }
+            
+            // 设置默认违规时间为当前时间
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const defaultDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            document.getElementById('violation_time').value = defaultDateTime;
+        });
+        
+        document.getElementById('violationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 防止重复提交
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton.classList.contains('submitting')) {
+                console.log('提交已在进行中，阻止重复提交');
+                return; // 如果按钮已标记为提交中，说明正在提交中，直接返回
+            }
+            
+            const provincePrefix = document.getElementById('province_prefix').value;
+            const letterPrefix = document.getElementById('letter_prefix').value;
+            const licensePlate = document.getElementById('license_plate').value;
+            
+            if (!provincePrefix) {
+                showMessage('请选择省份', 'error');
+                return;
+            }
+            
+            if (provincePrefix !== '特殊' && !letterPrefix) {
+                showMessage('请选择字母', 'error');
+                return;
+            }
+            
+            if (!licensePlate) {
+                showMessage('请输入车牌号码', 'error');
+                return;
+            }
+            
+            let fullLicensePlate;
+            
+            if (provincePrefix === '特殊') {
+                // 特殊车牌：省份 + 第三格内容
+                fullLicensePlate = provincePrefix + licensePlate;
+            } else {
+                // 普通车牌：省份 + 字母 + 第三格内容
+                // 验证车牌长度（第三格5-6位）
+                if (licensePlate.length < 5 || licensePlate.length > 6) {
+                    showMessage('车牌号码应为5-6位', 'error');
+                    return;
+                }
+                
+                fullLicensePlate = provincePrefix + letterPrefix + licensePlate;
+                
+                // 前端格式验证 - 只做基础检查，具体的格式验证交给后端
+                if (fullLicensePlate.length < 7) {
+                    showMessage('车牌号码格式不完整', 'error');
+                    return;
+                }
+            }
+            
+            // 禁用提交按钮，防止重复提交
+            submitButton.disabled = true;
+            submitButton.classList.add('submitting');
+            const originalButtonText = submitButton.innerHTML;
+            submitButton.innerHTML = '提交中...';
+            
+            const formData = new FormData(this);
+            // 保留原始的license_plate字段用于获取location等值
+            formData.set('license_plate', fullLicensePlate);
+            formData.delete('province_prefix');
+            formData.delete('letter_prefix');
+            
+            // 确保违规时间被正确添加
+            const violationTime = document.getElementById('violation_time').value;
+            if (violationTime) {
+                formData.set('violation_time', violationTime);
+            }
+            
+            // 添加多张照片文件到FormData（优先使用压缩后的文件）
+            if (compressedImages.length > 0) {
+                // 添加多张压缩后的图片路径
+                compressedImages.forEach(img => {
+                    formData.append('compressed_photos', img.path);
+                });
+            } else if (window.compressedFilePath) {
+                // 单张压缩图片（向后兼容）
+                formData.append('compressed_photo_path', window.compressedFilePath);
+            } else if (window.selectedFiles && window.selectedFiles.length > 0) {
+                // 直接上传原始文件（如果没有压缩）
+                const files = window.selectedFiles;
+                files.forEach(file => {
+                    formData.append('photo', file);
+                });
+            } else {
+                // 原始文件上传
+                const photoInput = document.getElementById('photoInput');
+                if (photoInput.files.length > 0) {
+                    const files = Array.from(photoInput.files);
+                    files.forEach(file => {
+                        formData.append('photo', file);
+                    });
+                }
+            }
+            
+            fetch('/submit_violation', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // 检查响应状态
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // 恢复提交按钮状态
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('submitting');
+                    submitButton.innerHTML = originalButtonText;
+                }
+                
+                if (data.success) {
+                    // 保存当前车牌号到localStorage
+                    const currentPlate = document.getElementById('license_plate').value;
+                    const currentProvince = document.getElementById('province_prefix').value;
+                    const currentLetter = document.getElementById('letter_prefix').value;
+                    localStorage.setItem('lastLicensePlate', currentPlate);
+                    localStorage.setItem('lastProvince', currentProvince);
+                    localStorage.setItem('lastLetter', currentLetter);
+                    
+                    // 清空压缩图片缓存
+                    compressedImages = [];
+                    window.compressedFilePath = null;
+                    window.selectedFiles = null; // 清除选中的文件
+                    
+                    // 隐藏上传按钮
+                    const uploadButton = document.getElementById('uploadButton');
+                    if (uploadButton) {
+                        uploadButton.style.display = 'none';
+                    }
+                    
+                    // 清空文件输入框
+                    const photoInput = document.getElementById('photoInput');
+                    if (photoInput) {
+                        photoInput.value = '';
+                    }
+                    
+                    // 清空预览区域
+                    const imagePreview = document.getElementById('imagePreview');
+                    const multiImagePreview = document.getElementById('multiImagePreview');
+                    if (imagePreview) {
+                        imagePreview.style.display = 'none';
+                    }
+                    if (multiImagePreview) {
+                        multiImagePreview.style.display = 'none';
+                    }
+                    
+                    // 显示成功提示
+                    showSuccessModal('🎉 违停记录提交成功！', data.message);
+                    
+                    // 3秒后自动跳转到统计页面
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 3000);
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                // 恢复提交按钮状态
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('submitting');
+                    submitButton.innerHTML = originalButtonText;
+                }
+                
+                console.error('提交请求失败:', error);
+                // 检查是否是网络问题或其他错误
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showMessage('网络连接失败，请检查网络后重试', 'error');
+                } else {
+                    showMessage('提交失败: ' + error.message + '，请重试', 'error');
+                }
+            });
+        });
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        function showSuccessModal(title, message) {
+            // 创建弹窗元素
+            const modal = document.createElement('div');
+            modal.className = 'success-modal';
+            
+            modal.innerHTML = `
+                <div class="success-modal-content">
+                    <div class="success-modal-icon">🎉</div>
+                    <div class="success-modal-title">${title}</div>
+                    <div class="success-modal-message">${message}</div>
+                    <div class="success-modal-countdown">3秒后自动跳转到统计页面...</div>
+                    <button class="success-modal-close" onclick="window.location.href='/'">立即查看统计</button>
+                </div>
+            `;
+            
+            // 添加到页面
+            document.body.appendChild(modal);
+            
+            // 倒计时更新
+            let countdown = 3;
+            const countdownElement = modal.querySelector('.success-modal-countdown');
+            
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    countdownElement.textContent = `${countdown}秒后自动跳转到统计页面...`;
+                } else {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+            
+            // 点击背景关闭（可选）
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                    clearInterval(countdownInterval);
+                }
+            });
+        }
+        
+        function takePhoto() {
+            const isSecureContext = window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost';
+            
+            if (!isSecureContext) {
+                showAlternativeCameraOptions();
+                return;
+            }
+            
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showAlternativeCameraOptions();
+                return;
+            }
+            
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            })
+            .then(stream => {
+                createCameraModal(stream);
+            })
+            .catch(err => {
+                console.error('无法访问摄像头:', err);
+                showAlternativeCameraOptions();
+            });
+        }
+        
+        function createCameraModal(stream) {
+            const video = document.createElement('video');
+            video.style.width = '100%';
+            video.style.maxWidth = '400px';
+            video.style.borderRadius = '10px';
+            video.style.marginBottom = '20px';
+            video.autoplay = true;
+            video.srcObject = stream;
+            
+            const canvas = document.createElement('canvas');
+            canvas.style.display = 'none';
+            
+            const captureBtn = document.createElement('button');
+            captureBtn.textContent = '📸 拍照';
+            captureBtn.className = 'btn';
+            captureBtn.style.marginBottom = '10px';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '❌ 取消';
+            cancelBtn.className = 'btn';
+            cancelBtn.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+                padding: 20px;
+            `;
+            
+            modal.appendChild(video);
+            modal.appendChild(canvas);
+            modal.appendChild(captureBtn);
+            modal.appendChild(cancelBtn);
+            document.body.appendChild(modal);
+            
+            captureBtn.onclick = function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0);
+                
+                stream.getTracks().forEach(track => track.stop());
+                
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    showPhotoPreview(url, modal);
+                }, 'image/jpeg', 0.8);
+            };
+            
+            cancelBtn.onclick = function() {
+                stream.getTracks().forEach(track => track.stop());
+                document.body.removeChild(modal);
+            };
+        }
+        
+        function showPhotoPreview(url, modal) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.width = '100%';
+            img.style.maxWidth = '300px';
+            img.style.borderRadius = '10px';
+            img.style.marginTop = '20px';
+            
+            modal.innerHTML = '';
+            modal.appendChild(img);
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = '💾 保存照片';
+            saveBtn.className = 'btn';
+            saveBtn.style.marginTop = '20px';
+            saveBtn.onclick = function() {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `violation_${new Date().getTime()}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                showMessage('照片已保存到本地', 'success');
+                document.body.removeChild(modal);
+                URL.revokeObjectURL(url);
+            };
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '❌ 关闭';
+            closeBtn.className = 'btn';
+            closeBtn.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+            closeBtn.style.marginLeft = '10px';
+            closeBtn.onclick = function() {
+                document.body.removeChild(modal);
+                URL.revokeObjectURL(url);
+            };
+            
+            modal.appendChild(saveBtn);
+            modal.appendChild(closeBtn);
+        }
+        
+        function showAlternativeCameraOptions() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+                padding: 20px;
+                color: white;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; color: #333; padding: 30px; border-radius: 15px; max-width: 400px; text-align: center;">
+                    <h3 style="margin-bottom: 20px;">📷 相机功能不可用</h3>
+                    <p style="margin-bottom: 20px; line-height: 1.5;">
+                        由于浏览器安全限制，无法直接访问相机。请尝试以下方法：
+                    </p>
+                    <div style="text-align: left; margin-bottom: 20px;">
+                        <p style="margin-bottom: 10px;">📱 <strong>手机用户：</strong></p>
+                        <p style="margin-left: 20px; margin-bottom: 10px;">• 使用系统相机拍照后上传</p>
+                        <p style="margin-bottom: 10px;">💻 <strong>电脑用户：</strong></p>
+                        <p style="margin-left: 20px; margin-bottom: 10px;">• 确保使用HTTPS或localhost</p>
+                        <p style="margin-left: 20px; margin-bottom: 10px;">• 检查浏览器相机权限</p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label for="fileUpload" style="display: inline-block; padding: 10px 20px; background: #4facfe; color: white; border-radius: 8px; cursor: pointer;">
+                            📁 选择照片上传
+                        </label>
+                        <input type="file" id="fileUpload" accept="image/*" multiple style="display: none;" onchange="handleFileSelect(this)">
+                    </div>
+                    <button onclick="document.body.removeChild(this.closest('div').parentElement)" style="padding: 10px 20px; background: #ff6b6b; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        关闭
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if (file && file.type.startsWith('image/')) {
+                showMessage(`已选择照片: ${file.name}`, 'success');
+            }
+        }
+        
+        // 存储多张压缩后的图片信息
+        let compressedImages = [];
+        
+        // 上传状态控制
+        let isUploading = false;
+        
+        function handlePhotoSelect(input) {
+            // 清空之前的压缩图片缓存
+            compressedImages = [];
+            window.compressedFilePath = null;
+            
+            const files = Array.from(input.files);
+            if (files.length === 0) return;
+            
+            // 验证所有文件都是图片
+            const nonImageFiles = files.filter(file => !file.type.startsWith('image/'));
+            if (nonImageFiles.length > 0) {
+                showMessage('请只选择图片文件', 'error');
+                input.value = '';
+                return;
+            }
+            
+            // 显示选中的文件信息
+            if (files.length === 1) {
+                showMessage(`已选择1张图片: ${files[0].name}`, 'success');
+            } else {
+                showMessage(`已选择${files.length}张图片`, 'success');
+            }
+            
+            // 显示上传按钮
+            const uploadButton = document.getElementById('uploadButton');
+            if (uploadButton) {
+                uploadButton.style.display = 'block';
+            }
+            
+            // 保存选中的文件到全局变量，供上传时使用
+            window.selectedFiles = files;
+        }
+        
+        function uploadSelectedPhotos() {
+            // 检查是否已选择文件
+            if (!window.selectedFiles || window.selectedFiles.length === 0) {
+                showMessage('请先选择照片', 'error');
+                return;
+            }
+            
+            // 检查是否正在上传
+            if (isUploading) {
+                showMessage('⏳ 正在处理图片，请等待完成后再上传', 'warning');
+                return;
+            }
+            
+            const files = window.selectedFiles;
+            
+            // 设置上传状态为true
+            isUploading = true;
+            disableUploadControls(true);
+            
+            // 隐藏之前的预览
+            const compressedPreview = document.getElementById('compressedPreview');
+            const multiImagePreview = document.getElementById('multiImagePreview');
+            if (compressedPreview) compressedPreview.style.display = 'none';
+            if (multiImagePreview) multiImagePreview.style.display = 'none';
+            
+            // 隐藏上传按钮
+            const uploadButton = document.getElementById('uploadButton');
+            if (uploadButton) {
+                uploadButton.style.display = 'none';
+            }
+            
+            if (files.length === 1) {
+                // 单张图片处理（原有逻辑）
+                const file = files[0];
+                showMessage(`正在压缩照片: ${file.name}...`, 'success');
+                compressAndPreviewImage(file, 0, 1);
+            } else {
+                // 多张图片处理 - 顺序处理
+                showMessage(`开始处理 ${files.length} 张图片...`, 'success');
+                processImagesSequentially(files, 0);
+            }
+        }
+        
+        function uploadSelectedPhotos() {
+            // 检查是否正在上传
+            if (isUploading) {
+                showMessage('⏳ 正在处理图片，请等待完成后再上传', 'warning');
+                return;
+            }
+            
+            const files = window.selectedFiles;
+            if (!files || files.length === 0) {
+                showMessage('请选择要上传的照片', 'error');
+                return;
+            }
+            
+            // 设置上传状态为true
+            isUploading = true;
+            disableUploadControls(true);
+            
+            // 清空之前的压缩图片
+            compressedImages = [];
+            window.compressedFilePath = null;
+            
+            // 隐藏之前的预览
+            const compressedPreview = document.getElementById('compressedPreview');
+            const multiImagePreview = document.getElementById('multiImagePreview');
+            if (compressedPreview) compressedPreview.style.display = 'none';
+            if (multiImagePreview) multiImagePreview.style.display = 'none';
+            
+            if (files.length === 1) {
+                // 单张图片处理（原有逻辑）
+                const file = files[0];
+                showMessage(`正在压缩照片: ${file.name}...`, 'success');
+                compressAndPreviewImage(file, 0, 1);
+            } else {
+                // 多张图片处理 - 顺序处理
+                showMessage(`开始处理 ${files.length} 张图片...`, 'success');
+                processImagesSequentially(files, 0);
+            }
+        }
+        
+        function processImagesSequentially(files, currentIndex) {
+            if (currentIndex >= files.length) {
+                // 所有图片处理完成
+                showMultiImagePreview();
+                // 重新启用上传控件
+                isUploading = false;
+                disableUploadControls(false);
+                return;
+            }
+            
+            const file = files[currentIndex];
+            compressAndPreviewImage(file, currentIndex, files.length, () => {
+                // 处理完当前图片后，处理下一张
+                setTimeout(() => {
+                    processImagesSequentially(files, currentIndex + 1);
+                }, 300); // 间隔300ms
+            });
+        }
+        
+        function compressAndPreviewImage(file, index, total, callback) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // 获取完整车牌号（包含省份和字母）
+            const provincePrefix = document.getElementById('province_prefix').value;
+            const letterPrefix = document.getElementById('letter_prefix').value;
+            const licensePlate = document.getElementById('license_plate').value.trim();
+            
+            let fullLicensePlate = '';
+            if (provincePrefix === '特殊') {
+                fullLicensePlate = provincePrefix + licensePlate;
+            } else if (licensePlate) {
+                fullLicensePlate = provincePrefix + letterPrefix + licensePlate;
+            }
+            
+            if (fullLicensePlate) {
+                formData.append('license_plate', fullLicensePlate);
+            }
+            
+            // 显示压缩进度
+            showMessage(`正在压缩第 ${index + 1} 张图片: ${file.name}`, 'success');
+            
+            fetch('/api/compress-preview', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 保存压缩后的图片信息
+                    compressedImages.push({
+                        path: data.compressed_path,
+                        filename: data.filename,
+                        original_size: data.original_size,
+                        compressed_size: data.compressed_size,
+                        compression_ratio: data.compression_ratio
+                    });
+                    
+                    // 显示压缩完成信息
+                    let compressionMessage = `✅ 第 ${index + 1} 张图片压缩完成！\n`;
+                    compressionMessage += `📁 文件名: ${data.filename}\n`;
+                    compressionMessage += `📊 ${data.original_size} → ${data.compressed_size} (${data.compression_ratio})`;
+                    
+                    showMessage(compressionMessage, 'success');
+                    
+                    // 如果是单张图片，显示预览
+                    if (!callback) {
+                        showCompressedPreview(data);
+                    }
+                    
+                    // 如果是单张图片，处理完成后重新启用控件
+                    if (!callback) {
+                        isUploading = false;
+                        disableUploadControls(false);
+                    }
+                    
+                    // 调用回调函数处理下一张图片
+                    if (callback) {
+                        callback();
+                    }
+                } else {
+                    showMessage(`❌ 第 ${index + 1} 张图片压缩失败: ${data.message}`, 'error');
+                    // 压缩失败时也要重新启用控件
+                    if (!callback) {
+                        isUploading = false;
+                        disableUploadControls(false);
+                    }
+                }
+            })
+            .catch(error => {
+                showMessage(`❌ 第 ${index + 1} 张图片压缩失败: ${error.message}`, 'error');
+                // 压缩失败时也要重新启用控件
+                if (!callback) {
+                    isUploading = false;
+                    disableUploadControls(false);
+                }
+            });
+        }
+        
+        // 禁用/启用上传控件
+        function disableUploadControls(disable) {
+            // 获取所有可能的DOM元素
+            const photoInput = document.getElementById('photoInput');
+            const cameraBtn = document.querySelector('.camera-btn');
+            const uploadBtn = document.getElementById('uploadButton');
+            const pasteBtn = document.querySelector('.paste-btn');
+            const dropZone = document.getElementById('dropZone');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            
+            // 禁用/启用文件输入
+            if (photoInput) {
+                photoInput.disabled = disable;
+            }
+            
+            // 禁用/启用按钮
+            if (cameraBtn) {
+                cameraBtn.disabled = disable;
+                cameraBtn.style.opacity = disable ? '0.6' : '1';
+                cameraBtn.style.cursor = disable ? 'not-allowed' : 'pointer';
+            }
+            
+            if (uploadBtn) {
+                uploadBtn.disabled = disable;
+                uploadBtn.style.opacity = disable ? '0.6' : '1';
+                uploadBtn.style.cursor = disable ? 'not-allowed' : 'pointer';
+            }
+            
+            if (pasteBtn) {
+                pasteBtn.disabled = disable;
+                pasteBtn.style.opacity = disable ? '0.6' : '1';
+                pasteBtn.style.cursor = disable ? 'not-allowed' : 'pointer';
+            }
+            
+            // 禁用/启用拖拽区域
+            if (dropZone) {
+                dropZone.style.opacity = disable ? '0.6' : '1';
+                dropZone.style.pointerEvents = disable ? 'none' : 'auto';
+                if (disable) {
+                    dropZone.classList.remove('drag-over');
+                }
+            }
+            
+            // 禁用/启用提交按钮
+            if (submitBtn) {
+                // 只有在启用时才移除提交状态类，禁用时添加提交状态类
+                if (disable) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('submitting');
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('submitting');
+                }
+                submitBtn.style.opacity = disable ? '0.6' : '1';
+                submitBtn.style.cursor = disable ? 'not-allowed' : 'pointer';
+            }
+            
+            // 更新拖拽区域文本
+            if (dropZone) {
+                const dropText = dropZone.querySelector('.drop-text');
+                const dropSubtext = dropZone.querySelector('.drop-subtext');
+                
+                if (disable) {
+                    if (dropText) dropText.textContent = '正在处理图片...';
+                    if (dropSubtext) dropSubtext.textContent = '请等待处理完成';
+                } else {
+                    if (dropText) dropText.textContent = '拖拽图片到这里上传';
+                    if (dropSubtext) dropSubtext.textContent = '或者点击下方按钮选择文件';
+                }
+            }
+        }
+        
+        function showCompressedPreview(data) {
+            // 创建或更新预览区域
+            let previewDiv = document.getElementById('compressedPreview');
+            if (!previewDiv) {
+                previewDiv = document.createElement('div');
+                previewDiv.id = 'compressedPreview';
+                previewDiv.className = 'compressed-preview';
+                
+                // 插入到上传按钮后面
+                const uploadBtn = document.querySelector('.camera-btn');
+                uploadBtn.parentNode.insertBefore(previewDiv, uploadBtn.nextSibling);
+            }
+            
+            // 计算更详细的数据
+            const originalMB = parseFloat(data.original_size);
+            const compressedKB = parseFloat(data.compressed_size);
+            const compressedMB = (compressedKB / 1024).toFixed(2);
+            const savedMB = (originalMB - compressedKB/1024).toFixed(2);
+            const savedRatio = parseFloat(data.compression_ratio);
+            
+            // 根据压缩率设置颜色
+            let ratioColor = '#28a745'; // 绿色
+            if (savedRatio >= 90) {
+                ratioColor = '#dc3545'; // 红色表示极高压缩
+            } else if (savedRatio >= 70) {
+                ratioColor = '#fd7e14'; // 橙色表示高压缩
+            }
+            
+            previewDiv.innerHTML = `
+                <div class="preview-header">
+                    <h4>🖼️ 压缩预览</h4>
+                    <button class="remove-preview" onclick="removeCompressedPreview()">✕</button>
+                </div>
+                <div class="preview-content">
+                    <img src="${data.compressed_url}" alt="压缩预览" class="preview-image">
+                    <div class="preview-info">
+                        <div class="preview-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">原始大小</span>
+                                <span class="stat-value original">${data.original_size}</span>
+                            </div>
+                            <div class="stat-arrow">→</div>
+                            <div class="stat-item">
+                                <span class="stat-label">压缩后</span>
+                                <span class="stat-value compressed">${data.compressed_size}</span>
+                            </div>
+                        </div>
+                        <div class="compression-summary">
+                            <span class="saved-space">节省 ${savedMB}MB</span>
+                            <span class="compression-ratio" style="color: ${ratioColor}; font-weight: bold;">(${data.compression_ratio})</span>
+                        </div>
+                        ${savedRatio >= 90 ? '<div class="compression-badge">🔥 极限压缩</div>' : 
+                          savedRatio >= 70 ? '<div class="compression-badge">⚡ 高效压缩</div>' : 
+                          '<div class="compression-badge">✅ 标准压缩</div>'}
+                        <div class="filename-info" style="margin-top: 8px; padding: 6px 10px; background: #f8f9fa; border-radius: 4px; font-size: 12px; color: #6c757d;">
+                            📁 文件名: ${data.filename || '未知'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 存储压缩后的文件路径供表单提交使用
+            window.compressedFilePath = data.compressed_path;
+        }
+        
+        function removeCompressedPreview() {
+            const previewDiv = document.getElementById('compressedPreview');
+            if (previewDiv) {
+                previewDiv.remove();
+            }
+            window.compressedFilePath = null;
+            compressedImages = []; // 清空压缩图片数组
+            
+            // 清空文件输入
+            const photoInput = document.getElementById('photoInput');
+            photoInput.value = '';
+        }
+        
+        function showMultiImagePreview() {
+            // 创建或更新多图片预览区域
+            let previewDiv = document.getElementById('multiImagePreview');
+            if (!previewDiv) {
+                previewDiv = document.createElement('div');
+                previewDiv.id = 'multiImagePreview';
+                previewDiv.className = 'multi-image-preview';
+                
+                // 插入到上传按钮后面
+                const uploadBtn = document.querySelector('.camera-btn');
+                uploadBtn.parentNode.insertBefore(previewDiv, uploadBtn.nextSibling);
+            }
+            
+            // 计算汇总统计
+            let totalOriginalSize = 0;
+            let totalCompressedSize = 0;
+            
+            compressedImages.forEach(img => {
+                const originalMB = parseFloat(img.original_size);
+                const compressedKB = parseFloat(img.compressed_size);
+                totalOriginalSize += originalMB;
+                totalCompressedSize += compressedKB / 1024;
+            });
+            
+            const totalSaved = totalOriginalSize - totalCompressedSize;
+            const totalCompressionRatio = (1 - totalCompressedSize / totalOriginalSize) * 100;
+            
+            // 生成预览HTML
+            let imagesHtml = compressedImages.map((img, index) => `
+                <div class="image-item">
+                    <img src="/${img.path}" alt="图片${index + 1}" class="preview-image">
+                    <div class="image-info">
+                        <div class="filename">📁 ${img.filename}</div>
+                        <div class="size-info">${img.original_size} → ${img.compressed_size}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            previewDiv.innerHTML = `
+                <div class="preview-header">
+                    <h4>🖼️ 多图预览 (${compressedImages.length} 张)</h4>
+                    <button class="remove-preview" onclick="removeMultiImagePreview()">✕</button>
+                </div>
+                <div class="preview-stats">
+                    <div class="stat-summary">
+                        <span class="total-original">原始总计: ${totalOriginalSize.toFixed(2)}MB</span>
+                        <span class="arrow">→</span>
+                        <span class="total-compressed">压缩总计: ${totalCompressedSize.toFixed(1)}MB</span>
+                        <span class="total-saved">节省: ${totalSaved.toFixed(2)}MB</span>
+                        <span class="total-ratio">(${totalCompressionRatio.toFixed(1)}%)</span>
+                    </div>
+                </div>
+                <div class="images-grid">
+                    ${imagesHtml}
+                </div>
+            `;
+        }
+        
+        function removeMultiImagePreview() {
+            const previewDiv = document.getElementById('multiImagePreview');
+            if (previewDiv) {
+                previewDiv.remove();
+            }
+            compressedImages = []; // 清空压缩图片数组
+            window.compressedFilePath = null; // 也清空单张图片路径
+        }
+        
+        function updateLicensePlateValidation() {
+            const provinceSelect = document.getElementById('province_prefix');
+            const letterSelect = document.getElementById('letter_prefix');
+            const licenseInput = document.getElementById('license_plate');
+            const helpDiv = document.getElementById('plateHelp');
+            const isSpecial = provinceSelect.value === '特殊';
+            
+            if (isSpecial) {
+                // 特殊车牌模式：隐藏第二格，第一格显示"特殊"，第三格允许中文输入
+                letterSelect.style.display = 'none';
+                // 只转换大写，不强制替换内容
+                if (licenseInput.value !== licenseInput.value.toUpperCase()) {
+                    licenseInput.value = licenseInput.value.toUpperCase();
+                }
+                licenseInput.placeholder = '如：使123456';
+                licenseInput.maxLength = 10;
+                helpDiv.textContent = '请输入特殊车牌号码（如：使123456）';
+                helpDiv.style.color = '#666';
+            } else {
+                // 普通车牌模式：显示所有三格
+                letterSelect.style.display = 'block';
+                
+                // 第三格只允许数字和字母，5-6位
+                const currentValue = licenseInput.value;
+                const cleanValue = currentValue.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                let finalValue = cleanValue;
+                if (cleanValue.length > 6) {
+                    finalValue = cleanValue.substring(0, 6);
+                }
+                
+                // 只有当值实际改变时才更新，避免重复输入
+                if (currentValue !== finalValue) {
+                    licenseInput.value = finalValue;
+                }
+                licenseInput.maxLength = 6;
+                
+                // 根据当前输入给出提示
+                if (finalValue.length === 0) {
+                    helpDiv.textContent = '请输入5-6位数字或字母大写（如：12345或A1B2C3）';
+                    helpDiv.style.color = '#666';
+                } else if (finalValue.length < 5) {
+                    helpDiv.textContent = `已输入${finalValue.length}位，还需${5-finalValue.length}位（最少5位）`;
+                    helpDiv.style.color = '#ff6b6b';
+                } else if (finalValue.length >= 5 && finalValue.length <= 6) {
+                    helpDiv.textContent = '✓ 车牌号码格式正确';
+                    helpDiv.style.color = '#28a745';
+                }
+            }
+        }
+        
+        function validateKeyPress(event) {
+            const provinceSelect = document.getElementById('province_prefix');
+            const licenseInput = document.getElementById('license_plate');
+            const isSpecial = provinceSelect.value === '特殊';
+            
+            if (isSpecial) {
+                // 特殊车牌允许所有字符
+                return true;
+            } else {
+                // 普通车牌只允许数字和字母，且不超过6位
+                const currentValue = licenseInput.value;
+                if (currentValue.length >= 6) {
+                    return false; // 防止超过6位
+                }
+                return event.charCode >= 48 && event.charCode <= 57 || 
+                       event.charCode >= 65 && event.charCode <= 90 || 
+                       event.charCode >= 97 && event.charCode <= 122;
+            }
+        }
+        
+        // 页面加载完成后执行初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化车牌号码输入验证
+            updateLicensePlateValidation();
+            
+            // 绑定拖拽事件
+            bindDragEvents();
+        });
+        
+        // 绑定拖拽事件
+        function bindDragEvents() {
+            const dropZone = document.getElementById('dropZone');
+            if (!dropZone) return;
+        }
+    </script>
+</body>
+</html>

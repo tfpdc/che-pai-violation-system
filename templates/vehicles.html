@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车辆违规统计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4facfe;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .vehicle-list {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .vehicle-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+        
+        .vehicle-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .vehicle-item:last-child {
+            border-bottom: none;
+        }
+        
+        .vehicle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .license-plate {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .violation-count {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .last-violation {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .violation-trend {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .record-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 25px;
+            transition: transform 0.2s;
+        }
+        
+        .record-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .filter-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filter-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+        
+        .high-frequency {
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .medium-frequency {
+            border-left: 4px solid #ffa726;
+        }
+        
+        .low-frequency {
+            border-left: 4px solid #66bb6a;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .delete-vehicle-btn {
+            padding: 6px 12px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .delete-vehicle-btn:hover {
+            background: #ff3838;
+            transform: translateY(-1px);
+        }
+        
+        .vehicle-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 车辆违规统计</h1>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalVehicles">0</div>
+                    <div class="stat-label">违规车辆数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalViolations">0</div>
+                    <div class="stat-label">总违规次数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="todayVehicles">0</div>
+                    <div class="stat-label">今日新增</div>
+                </div>
+            </div>
+            <a href="/record" class="record-btn">➕ 录入违停</a>
+        </div>
+        
+        <div class="filter-bar">
+            <input type="text" class="filter-input" id="searchInput" 
+                   placeholder="搜索车牌号...">
+        </div>
+        
+        <div class="vehicle-list" id="vehicleList">
+            <div class="empty-state">
+                <div class="empty-state-icon">🚗</div>
+                <p>暂无违规车辆</p>
+            </div>
+        </div>
+        
+        <a href="javascript:location.reload()" class="back-link">🔄 刷新记录</a>
+    </div>
+
+    <script>
+        let vehicles = [];
+        
+        function loadVehicles() {
+            fetch('/api/vehicles')
+                .then(response => response.json())
+                .then(data => {
+                    vehicles = data;
+                    displayVehicles(vehicles);
+                    updateStats();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+        
+        function displayVehicles(vehiclesToShow) {
+            const listContainer = document.getElementById('vehicleList');
+            
+            if (vehiclesToShow.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🚗</div>
+                        <p>暂无违规车辆</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listContainer.innerHTML = vehiclesToShow.map(vehicle => {
+                const frequencyClass = getFrequencyClass(vehicle.violation_count);
+                const trendText = getTrendText(vehicle.violation_count);
+                
+                return `
+                    <div class="vehicle-item ${frequencyClass}">
+                        <div class="vehicle-header">
+                            <div class="license-plate" onclick="window.location.href='/license_plate/${vehicle.license_plate}'" style="cursor: pointer; flex: 1;">${vehicle.license_plate}</div>
+                            <div class="vehicle-actions">
+                                <div class="violation-count">${vehicle.violation_count}次</div>
+                                <button class="delete-vehicle-btn" onclick="deleteVehicle('${vehicle.license_plate}')" title="删除此车牌的所有记录">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                        <div class="last-violation">📍 最近违规: ${formatDate(vehicle.last_violation)}</div>
+                        <div class="violation-trend">${trendText}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getFrequencyClass(count) {
+            if (count >= 5) return 'high-frequency';
+            if (count >= 3) return 'medium-frequency';
+            return 'low-frequency';
+        }
+        
+        function getTrendText(count) {
+            if (count >= 5) return '⚠️ 高频违规车辆';
+            if (count >= 3) return '⚡ 中频违规车辆';
+            return '✅ 低频违规车辆';
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '未知时间';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                return `今天 ${date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}`;
+            } else if (diffDays === 1) {
+                return `昨天 ${date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}`;
+            } else if (diffDays < 7) {
+                return `${diffDays}天前`;
+            } else {
+                return date.toLocaleDateString('zh-CN');
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('totalVehicles').textContent = vehicles.length;
+            
+            const totalViolations = vehicles.reduce((sum, vehicle) => sum + vehicle.violation_count, 0);
+            document.getElementById('totalViolations').textContent = totalViolations;
+            
+            const today = new Date().toDateString();
+            const todayVehicles = vehicles.filter(v => 
+                v.last_violation && new Date(v.last_violation).toDateString() === today
+            );
+            document.getElementById('todayVehicles').textContent = todayVehicles.length;
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            if (searchTerm === '') {
+                displayVehicles(vehicles);
+                return;
+            }
+            
+            const filteredVehicles = vehicles.filter(vehicle => 
+                vehicle.license_plate.toLowerCase().includes(searchTerm)
+            );
+            
+            displayVehicles(filteredVehicles);
+        });
+        
+        loadVehicles();
+        setInterval(loadVehicles, 30000);
+        
+        // 删除车牌的所有记录
+        function deleteVehicle(licensePlate) {
+            if (!confirm(`确定要删除车牌 ${licensePlate} 的所有违停记录吗？\n此操作不可撤销！`)) {
+                return;
+            }
+            
+            if (!confirm('再次确认：删除后该车牌的所有记录将永久消失！')) {
+                return;
+            }
+            
+            const encodedPlate = encodeURIComponent(licensePlate);
+            
+            fetch(`/api/vehicle/${encodedPlate}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(`成功删除车牌 ${licensePlate} 的所有记录`, 'success');
+                    // 2秒后刷新列表
+                    setTimeout(() => {
+                        loadVehicles();
+                    }, 2000);
+                } else {
+                    showMessage(data.message || '删除失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('删除失败:', error);
+                showMessage('删除失败，请稍后重试', 'error');
+            });
+        }
+        
+        // 显示消息提示
+        function showMessage(message, type) {
+            // 创建消息元素
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                max-width: 300px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                animation: slideIn 0.3s ease;
+            `;
+            
+            if (type === 'success') {
+                messageDiv.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+            } else {
+                messageDiv.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+            }
+            
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                messageDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

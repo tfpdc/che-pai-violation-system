@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  che-pai-app:
+    # 构建上下文为当前目录
+    build: .
+    # 映射端口到主机
+    ports:
+      - "5000:5000"
+    # 挂载数据卷以持久化数据
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    # 从文件加载环境变量
+    env_file:
+      - .env
+    # 设置环境变量
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=app/app.py
+    # 在退出时自动重启容器
+    restart: unless-stopped
+    # 设置容器名称
+    container_name: che-pai-app
+    # 添加用户ID以避免权限问题
+    user: "1000:1000"

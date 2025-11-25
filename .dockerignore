@@ -1,0 +1,53 @@
+# Ignore these files when building the Docker image
+
+# Version control files
+.git/
+.github/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Test files
+tests/
+
+# Documentation
+docs/
+
+# Tar files (exported images)
+*.tar
+
+# FRP configs
+frp/
+
+# Not needed directories
+.claude/
+
+# 不忽略这些重要文件
+!Dockerfile
+!requirements.txt
+!app/
+!modules/
+!templates/
+!static/
+!data/
+!uploads/

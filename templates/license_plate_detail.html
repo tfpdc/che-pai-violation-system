@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ license_plate }} - 违停记录详情</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .license-plate-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4facfe;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .violation-list {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .violation-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s;
+        }
+        
+        .violation-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .violation-item:last-child {
+            border-bottom: none;
+        }
+        
+        .violation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .violation-type {
+            display: inline-block;
+            padding: 6px 0;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .timestamp {
+            font-size: 12px;
+            color: #999;
+            text-align: right;
+        }
+        
+        .location {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .violation-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .violation-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .violation-info {
+            flex: 1;
+            margin-right: 15px;
+        }
+        
+        .violation-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+        
+        .description {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .photo-container {
+            margin-top: 15px;
+        }
+        
+        /* 地点时间显示样式 */
+        .location-time-header {
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+        
+        .location-time-display {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.4;
+        }
+        
+        .time-part {
+            font-weight: 700;
+            color: #666;
+            margin-left: 8px;
+        }
+        
+        .photo {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .photo:hover {
+            transform: scale(1.02);
+        }
+        
+        .no-photo {
+            color: #999;
+            font-style: italic;
+            font-size: 14px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 25px;
+            transition: background-color 0.3s;
+        }
+        
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        
+        .modal-close:hover {
+            opacity: 0.7;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .delete-btn {
+            padding: 4px 8px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: #ff3838;
+        }
+        
+        .delete-all-btn {
+            padding: 8px 16px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .delete-all-btn:hover {
+            background: #ff3838;
+            transform: translateY(-1px);
+        }
+        
+        .edit-btn {
+            padding: 4px 8px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 5px;
+        }
+        
+        .edit-btn:hover {
+            background: #3b8bfe;
+        }
+        
+        .save-btn {
+            padding: 8px 16px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 8px;
+        }
+        
+        .save-btn:hover {
+            background: #27ae60;
+        }
+        
+        .cancel-btn {
+            padding: 8px 16px;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .cancel-btn:hover {
+            background: #7f8c8d;
+        }
+        
+        .edit-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #4facfe;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            margin-bottom: 10px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .edit-input:focus {
+            border-color: #3b8bfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .edit-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 8px 12px;
+            border: 2px solid #4facfe;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 10px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .edit-textarea:focus {
+            border-color: #3b8bfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .edit-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #4facfe;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            margin-bottom: 10px;
+            outline: none;
+            transition: border-color 0.3s;
+            background-color: white;
+        }
+        
+        .edit-select:focus {
+            border-color: #3b8bfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+
+        
+        .image-operations {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .image-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e1e8ed;
+        }
+        
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 12px;
+            border: 1px solid #e1e8ed;
+            background: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .image-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .image-name {
+            font-size: 13px;
+            color: #666;
+            margin-left: 8px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .rename-btn, .delete-image-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .rename-btn {
+            background: #4facfe;
+            color: white;
+        }
+        
+        .rename-btn:hover {
+            background: #3b8bfe;
+        }
+        
+        .delete-image-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .delete-image-btn:hover {
+            background: #ff5252;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="license-plate-title">{{ license_plate }}</h1>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">{{ total_count }}</div>
+                    <div class="stat-label">总违停次数</div>
+                </div>
+                {% if first_violation %}
+                <div class="stat-item">
+                    <div class="stat-number" data-date="{{ first_violation }}">{{ first_violation[:10] }}</div>
+                    <div class="stat-label">首次违规</div>
+                </div>
+                {% endif %}
+                {% if last_violation %}
+                <div class="stat-item">
+                    <div class="stat-number" data-date="{{ last_violation }}">{{ last_violation[:10] }}</div>
+                    <div class="stat-label">最近违规</div>
+                </div>
+                {% endif %}
+            </div>
+            
+
+            {% if total_count >= 5 %}
+            <div style="margin-top: 15px; padding: 8px 16px; background: #ffebee; color: #c62828; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                ⚠️ 高频违规车辆
+            </div>
+            {% elif total_count >= 3 %}
+            <div style="margin-top: 15px; padding: 8px 16px; background: #fff3e0; color: #ef6c00; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                ⚡ 中频违规车辆
+            </div>
+            {% else %}
+            <div style="margin-top: 15px; padding: 8px 16px; background: #e8f5e8; color: #2e7d32; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                ✅ 低频违规车辆
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="violation-list">
+            {% if violations %}
+                {% for violation in violations %}
+                <div class="violation-item" id="violation-{{ violation[0] }}">
+                    <!-- 地点时间分两行显示 -->
+                    <div class="violation-content">
+                        <div class="location-time-header">
+                            <div class="location-time-display" id="location-time-display-{{ violation[0] }}">
+                                📍 {{ violation[2] }}
+                            </div>
+                        </div>
+                        
+                        <div class="location-time-header" style="margin-top: 5px;">
+                            <div class="location-time-display" id="time-display-{{ violation[0] }}">
+                                ⏰ {{ violation[7] if violation|length > 7 else violation[6] }}
+                            </div>
+                        </div>
+                        
+                        <div class="violation-type" id="type-display-{{ violation[0] }}">🚫 {{ violation[3] }}</div>
+                        
+                        {% if violation[4] %}
+                        <div class="description-box" id="description-display-{{ violation[0] }}" style="margin-top: 8px;">
+                            <div class="description-label">📄 描述:</div>
+                            <div class="description-content">{{ violation[4] }}</div>
+                        </div>
+                        {% endif %}
+                    
+                    <!-- 图片和操作按钮区域 -->
+                    <div class="violation-main">
+                        <div class="violation-info">
+                            {% if violation[5] %}
+                            <div class="photo-container" id="photo-container-{{ loop.index }}">
+                                <!-- 照片将通过JavaScript动态加载 -->
+                            </div>
+                            {% else %}
+                            <div class="photo-container">
+                                <div class="no-photo">📷 无照片</div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="timestamp" style="font-size: 12px; color: #888; text-align: right; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee;">
+                                {{ violation[7] if violation|length > 7 else violation[6] }}
+                            </div>
+                            
+                            <!-- 编辑删除按钮移到图片下方 -->
+                            <div class="violation-actions" style="margin-top: 10px; text-align: right;">
+                                <div id="action-buttons-{{ violation[0] }}">
+                                    <button class="edit-btn" onclick="enterEditMode({{ violation[0] }})" title="编辑此记录">
+                                        ✏️ 编辑
+                                    </button>
+                                    <button class="delete-btn" onclick="deleteViolation({{ violation[0] }})" title="删除此记录">
+                                        🗑️ 删除
+                                    </button>
+                                </div>
+                                <div id="edit-buttons-{{ violation[0] }}" style="display: none;">
+                                    <button class="save-btn" onclick="saveViolation({{ violation[0] }})" title="保存修改">
+                                        💾 保存
+                                    </button>
+                                    <button class="cancel-btn" onclick="cancelEdit({{ violation[0] }})" title="取消编辑">
+                                        ❌ 取消
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 编辑表单 -->
+                    <div id="edit-form-{{ violation[0] }}" style="display: none;">
+                        <select class="edit-select" id="type-input-{{ violation[0] }}">
+                            <option value="占用消防通道" {% if violation[3] == '占用消防通道' %}selected{% endif %}>占用消防通道</option>
+                            <option value="占用人行道" {% if violation[3] == '占用人行道' %}selected{% endif %}>占用人行道</option>
+                            <option value="逆向停车" {% if violation[3] == '逆向停车' %}selected{% endif %}>逆向停车</option>
+                            <option value="压线停车" {% if violation[3] == '压线停车' %}selected{% endif %}>压线停车</option>
+                            <option value="禁止停车区域" {% if violation[3] == '禁止停车区域' %}selected{% endif %}>禁止停车区域</option>
+                            <option value="其他" {% if violation[3] == '其他' %}selected{% endif %}>其他</option>
+                        </select>
+                        <input type="text" class="edit-input" id="location-input-{{ violation[0] }}" 
+                               placeholder="请输入违规地点" value="{{ violation[2] }}">
+                        <textarea class="edit-textarea" id="description-input-{{ violation[0] }}" 
+                                  placeholder="请输入违规描述（可选）">{% if violation[4] %}{{ violation[4] }}{% endif %}</textarea>
+                        <input type="datetime-local" class="violation-time-input" id="violation-time-input-{{ violation[0] }}" 
+                               value="{{ violation[7] if violation|length > 7 else violation[6] }}">
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">
+                            📅 违规时间（可修改）
+                        </div>
+                        
+                        <!-- 图片操作区域 -->
+                        <div class="image-operations" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #333;">📷 图片操作</div>
+                            
+                            <!-- 添加新图片 -->
+                            <div style="margin-bottom: 10px;">
+                                <input type="file" id="new-image-{{ violation[0] }}" accept="image/*" style="display: none;" onchange="previewNewImage({{ violation[0] }})">
+                                <button type="button" class="edit-btn" onclick="document.getElementById('new-image-{{ violation[0] }}').click()" style="width: 100%;">
+                                    ➕ 添加新图片
+                                </button>
+                                <div id="new-image-preview-{{ violation[0] }}" style="margin-top: 10px;"></div>
+                            </div>
+                            
+                            <!-- 现有图片管理 -->
+                            <div id="existing-images-{{ violation[0] }}">
+                                <!-- 现有图片将通过JavaScript动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">🚗</div>
+                    <p>暂无违停记录</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="delete-all-btn" onclick="deleteAllViolations('{{ license_plate }}')" title="删除此车牌的所有记录">
+                🗑️ 删除 {{ license_plate }} 的所有记录
+            </button>
+        </div>
+        
+        <a href="/" class="back-link">← 返回记录列表</a>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div id="photoModal" class="modal" onclick="closeModal()">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        function formatTime(dateString) {
+            if (!dateString) return '未知时间';
+            
+            // 尝试解析日期字符串
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                console.warn('无效的日期格式:', dateString);
+                return '未知时间';
+            }
+            
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                return `今天${date.getHours().toString().padStart(2, '0')}点${date.getMinutes().toString().padStart(2, '0')}分`;
+            } else if (diffDays === 1) {
+                return `昨天${date.getHours().toString().padStart(2, '0')}点${date.getMinutes().toString().padStart(2, '0')}分`;
+            } else {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const hour = date.getHours().toString().padStart(2, '0');
+                const minute = date.getMinutes().toString().padStart(2, '0');
+                return `${year}.${month}.${day}号${hour}点${minute}分`;
+            }
+        }
+        
+        function formatLocationTime(location, violationTime) {
+            const formattedTime = formatTime(violationTime);
+            return `📍 ${location}${formattedTime}`;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '未知';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                return '今天';
+            } else if (diffDays === 1) {
+                return '昨天';
+            } else if (diffDays < 7) {
+                return `${diffDays}天前`;
+            } else if (diffDays < 30) {
+                return `${Math.floor(diffDays / 7)}周前`;
+            } else if (diffDays < 365) {
+                return `${Math.floor(diffDays / 30)}月前`;
+            } else {
+                return `${Math.floor(diffDays / 365)}年前`;
+            }
+        }
+        
+        function openModal(imageSrc) {
+            const modal = document.getElementById('photoModal');
+            const modalImg = document.getElementById('modalImage');
+            
+            modal.style.display = 'flex';
+            modalImg.src = imageSrc;
+        }
+        
+        function closeModal() {
+            document.getElementById('photoModal').style.display = 'none';
+        }
+        
+        // 页面加载完成后格式化时间和加载照片
+        document.addEventListener('DOMContentLoaded', function() {
+            // 格式化时间戳
+            const timestampElements = document.querySelectorAll('.timestamp');
+            timestampElements.forEach(element => {
+                if (element.textContent && element.textContent.includes('-')) {
+                    // 检查是否是记录时间元素（包含"记录时间:"前缀）
+                    if (element.textContent.startsWith('记录时间:')) {
+                        const timeStr = element.textContent.replace('记录时间:', '').trim();
+                        element.textContent = '记录时间: ' + formatTime(timeStr);
+                    } else {
+                        element.textContent = formatTime(element.textContent);
+                    }
+                }
+            });
+            
+            // 格式化日期
+            const dateElements = document.querySelectorAll('.stat-number[data-date]');
+            dateElements.forEach(element => {
+                const dateString = element.getAttribute('data-date');
+                if (dateString) {
+                    element.textContent = formatDate(dateString);
+                }
+            });
+            
+            // 加载照片
+            loadPhotos();
+        });
+        
+        function loadSingleViolationPhotos(recordId) {
+            // 只重新加载指定记录的照片
+            const licensePlate = encodeURIComponent('{{ license_plate }}');
+            fetch(`/api/violations?license_plate=${licensePlate}`)
+                .then(response => response.json())
+                .then(data => {
+                    const violation = data.find(v => v.id == recordId);
+                    if (violation) {
+                        const index = data.findIndex(v => v.id == recordId);
+                        const container = document.getElementById(`photo-container-${index + 1}`);
+                        if (container) {
+                            // 先清空容器
+                            container.innerHTML = '';
+                            
+                            if (violation.photo_path) {
+                                try {
+                                    const photoPaths = JSON.parse(violation.photo_path);
+                                    if (Array.isArray(photoPaths)) {
+                                        photoPaths.forEach((path, pathIndex) => {
+                                            const img = document.createElement('img');
+                                            img.src = '/' + path;
+                                            img.alt = `违停照片${pathIndex + 1}`;
+                                            img.className = 'photo';
+                                            img.style.marginBottom = '10px';
+                                            img.onerror = function() { 
+                                                this.style.display = 'none';
+                                                const errorMsg = document.createElement('div');
+                                                errorMsg.className = 'no-photo';
+                                                errorMsg.textContent = '📷 图片加载失败';
+                                                errorMsg.style.marginBottom = '10px';
+                                                this.parentNode.insertBefore(errorMsg, this);
+                                            };
+                                            img.onclick = function() { openModal(this.src); };
+                                            container.appendChild(img);
+                                        });
+                                    } else {
+                                        const img = document.createElement('img');
+                                        img.src = '/' + violation.photo_path;
+                                        img.alt = '违停照片';
+                                        img.className = 'photo';
+                                        img.onerror = function() { 
+                                            this.style.display = 'none';
+                                            const errorMsg = document.createElement('div');
+                                            errorMsg.className = 'no-photo';
+                                            errorMsg.textContent = '📷 图片加载失败';
+                                            this.parentNode.insertBefore(errorMsg, this);
+                                        };
+                                        img.onclick = function() { openModal(this.src); };
+                                        container.appendChild(img);
+                                    }
+                                } catch (e) {
+                                    const img = document.createElement('img');
+                                    img.src = '/' + violation.photo_path;
+                                    img.alt = '违停照片';
+                                    img.className = 'photo';
+                                    img.onerror = function() { 
+                                        this.style.display = 'none';
+                                        const errorMsg = document.createElement('div');
+                                        errorMsg.className = 'no-photo';
+                                        errorMsg.textContent = '📷 图片加载失败';
+                                        this.parentNode.insertBefore(errorMsg, this);
+                                    };
+                                    img.onclick = function() { openModal(this.src); };
+                                    container.appendChild(img);
+                                }
+                            } else {
+                                container.innerHTML = '<div class="no-photo">📷 无照片</div>';
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('重新加载照片失败:', error);
+                });
+        }
+        
+        function loadPhotos() {
+            // 从后端获取违规数据来处理照片
+            const licensePlate = encodeURIComponent('{{ license_plate }}');
+            fetch(`/api/violations?license_plate=${licensePlate}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach((violation, index) => {
+                        const container = document.getElementById(`photo-container-${index + 1}`);
+                        if (container) {
+                            // 先清空容器，避免重复显示
+                            container.innerHTML = '';
+                            
+                            if (violation.photo_path) {
+                                try {
+                                    // 尝试解析JSON
+                                    const photoPaths = JSON.parse(violation.photo_path);
+                                    if (Array.isArray(photoPaths)) {
+                                        // 多张照片
+                                        photoPaths.forEach((path, pathIndex) => {
+                                            const img = document.createElement('img');
+                                            img.src = '/' + path;
+                                            img.alt = `违停照片${pathIndex + 1}`;
+                                            img.className = 'photo';
+                                            img.style.marginBottom = '10px';
+                                            img.onerror = function() { 
+                                                this.style.display = 'none';
+                                                const errorMsg = document.createElement('div');
+                                                errorMsg.className = 'no-photo';
+                                                errorMsg.textContent = '📷 图片加载失败';
+                                                errorMsg.style.marginBottom = '10px';
+                                                this.parentNode.insertBefore(errorMsg, this);
+                                            };
+                                            img.onclick = function() { openModal(this.src); };
+                                            container.appendChild(img);
+                                        });
+                                    } else {
+                                        // 单张照片
+                                        const img = document.createElement('img');
+                                        img.src = '/' + violation.photo_path;
+                                        img.alt = '违停照片';
+                                        img.className = 'photo';
+                                        img.onerror = function() { 
+                                            this.style.display = 'none';
+                                            const errorMsg = document.createElement('div');
+                                            errorMsg.className = 'no-photo';
+                                            errorMsg.textContent = '📷 图片加载失败';
+                                            this.parentNode.insertBefore(errorMsg, this);
+                                        };
+                                        img.onclick = function() { openModal(this.src); };
+                                        container.appendChild(img);
+                                    }
+                                } catch (e) {
+                                    // 不是JSON格式，直接显示单张照片
+                                    const img = document.createElement('img');
+                                    img.src = '/' + violation.photo_path;
+                                    img.alt = '违停照片';
+                                    img.className = 'photo';
+                                    img.onerror = function() { 
+                                        this.style.display = 'none';
+                                        const errorMsg = document.createElement('div');
+                                        errorMsg.className = 'no-photo';
+                                        errorMsg.textContent = '📷 图片加载失败';
+                                        this.parentNode.insertBefore(errorMsg, this);
+                                    };
+                                    img.onclick = function() { openModal(this.src); };
+                                    container.appendChild(img);
+                                }
+                            } else {
+                                // 没有图片
+                                container.innerHTML = '<div class="no-photo">📷 无照片</div>';
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('加载照片失败:', error);
+                });
+        }
+        
+        // 删除单条记录
+        function deleteViolation(recordId) {
+            if (!confirm('确定要删除这条违停记录吗？此操作不可撤销。')) {
+                return;
+            }
+            
+            fetch(`/api/violation/${recordId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 显示成功消息
+                    showMessage('删除成功', 'success');
+                    // 动态移除被删除的元素而不是刷新整个页面
+                    const violationElement = document.getElementById(`violation-${recordId}`);
+                    if (violationElement) {
+                        violationElement.style.transition = 'opacity 0.3s';
+                        violationElement.style.opacity = '0';
+                        setTimeout(() => {
+                            violationElement.remove();
+                            // 更新统计信息
+                            updateStatistics();
+                        }, 300);
+                    }
+                } else {
+                    showMessage(data.message || '删除失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('删除失败:', error);
+                showMessage('删除失败，请稍后重试', 'error');
+            });
+        }
+        
+        // 更新统计信息
+        function updateStatistics() {
+            // 获取剩余违规条目数
+            const violationItems = document.querySelectorAll('.violation-item');
+            const count = violationItems.length;
+            
+            // 更新总数显示
+            const totalCountElement = document.querySelector('.stat-number');
+            if (totalCountElement) {
+                totalCountElement.textContent = count;
+            }
+            
+            // 更新车辆风险等级显示
+            const riskIndicator = document.querySelector('div[style*="border-radius: 20px"]');
+            if (riskIndicator) {
+                if (count >= 5) {
+                    riskIndicator.innerHTML = '⚠️ 高频违规车辆';
+                    riskIndicator.style.background = '#ffebee';
+                    riskIndicator.style.color = '#c62828';
+                } else if (count >= 3) {
+                    riskIndicator.innerHTML = '⚡ 中频违规车辆';
+                    riskIndicator.style.background = '#fff3e0';
+                    riskIndicator.style.color = '#ef6c00';
+                } else {
+                    riskIndicator.innerHTML = '✅ 低频违规车辆';
+                    riskIndicator.style.background = '#e8f5e8';
+                    riskIndicator.style.color = '#2e7d32';
+                }
+            }
+        }
+        
+        // 删除车牌的所有记录
+        function deleteAllViolations(licensePlate) {
+            const count = {{ total_count }};
+            if (!confirm(`确定要删除车牌 ${licensePlate} 的所有 ${count} 条违停记录吗？\n此操作不可撤销！`)) {
+                return;
+            }
+            
+            if (!confirm('【重要提醒】删除后该车牌的所有记录将永久消失！\n\n请点击"确定"确认删除，或点击"取消"中止操作。')) {
+                return;
+            }
+            
+            const encodedPlate = encodeURIComponent(licensePlate);
+            
+            fetch(`/api/vehicle/${encodedPlate}`, {
+                method: 'DELETE'
+                })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message || `成功删除车牌 ${licensePlate} 的所有记录`, 'success');
+                    // 2秒后跳转到主页
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    showMessage(data.message || '删除失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('删除失败:', error);
+                showMessage('删除失败，请稍后重试', 'error');
+            });
+        }
+        
+        // 显示消息提示
+        function showMessage(message, type) {
+            // 创建消息元素
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                max-width: 300px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                animation: slideIn 0.3s ease;
+            `;
+            
+            if (type === 'success') {
+                messageDiv.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+            } else if (type === 'info') {
+                messageDiv.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            } else {
+                messageDiv.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+            }
+            
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                messageDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // 图片操作相关函数
+        function previewNewImage(recordId) {
+            const fileInput = document.getElementById(`new-image-${recordId}`);
+            const previewDiv = document.getElementById(`new-image-preview-${recordId}`);
+            
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewDiv.innerHTML = `
+                        <img src="${e.target.result}" style="max-width: 100px; max-height: 100px; border-radius: 4px; margin-bottom: 5px;">
+                        <div style="font-size: 12px; color: #666;">新图片预览</div>
+                    `;
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+        
+        function loadExistingImages(recordId) {
+            const container = document.getElementById(`existing-images-${recordId}`);
+            
+            // 先从页面中获取现有的图片信息
+            const violationElement = document.getElementById(`violation-${recordId}`);
+            const photoContainer = violationElement.querySelector('.photo-container');
+            const images = photoContainer.querySelectorAll('img');
+            
+            if (images.length > 0) {
+                let html = '';
+                images.forEach((img, index) => {
+                    const imgSrc = img.src;
+                    // 更好地提取文件名，处理URL编码的情况
+                    let imgName = imgSrc.split('/').pop() || `图片${index + 1}`;
+                    // 如果是完整的URL，去掉查询参数
+                    imgName = imgName.split('?')[0];
+                    // 如果文件名太长，截取前30个字符
+                    if (imgName.length > 30) {
+                        imgName = imgName.substring(0, 27) + '...';
+                    }
+                    html += `
+                        <div class="image-item">
+                            <div class="image-info">
+                                <img src="${imgSrc}" class="image-preview" alt="图片${index + 1}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div style="display:none;" class="no-photo">📷 图片加载失败</div>
+                                <span class="image-name" title="${imgName}">${imgName}</span>
+                            </div>
+                            <div class="image-actions">
+                                <button class="rename-btn" onclick="renameImage(${recordId}, '${imgSrc}', ${index})">重命名</button>
+                                <button class="delete-image-btn" onclick="deleteImage(${recordId}, '${imgSrc}')">删除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div style="font-size: 12px; color: #999; text-align: center; padding: 10px;">暂无图片</div>';
+            }
+        }
+        
+        function renameImage(recordId, imagePath, imageIndex) {
+            const newName = prompt('请输入新的图片名称（不含扩展名）：');
+            if (newName && newName.trim()) {
+                // 安全检查：确保新名称不包含危险字符
+                if (newName.includes('/') || newName.includes('\\') || newName.includes('..')) {
+                    showMessage('文件名不能包含 / \\ .. 等字符', 'error');
+                    return;
+                }
+                
+                // 将完整URL转换为相对路径
+                let relativePath = imagePath;
+                let baseUrl = '';
+                if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+                    try {
+                        const url = new URL(imagePath);
+                        relativePath = url.pathname;
+                        baseUrl = url.origin;
+                    } catch (e) {
+                        console.error('URL解析失败:', e);
+                        showMessage('图片路径解析失败', 'error');
+                        return;
+                    }
+                }
+                
+                // 移除开头的斜杠
+                if (relativePath.startsWith('/')) {
+                    relativePath = relativePath.substring(1);
+                }
+                
+                // 获取文件扩展名
+                const originalName = relativePath.split('/').pop();
+                const fileExt = originalName.split('.').pop();
+                
+                // 构建新的文件名
+                const newFileName = newName.trim() + '.' + fileExt;
+                const newPath = relativePath.replace(originalName, newFileName);
+                
+                showMessage('正在重命名图片...', 'info');
+                
+                // 发送重命名请求到后端
+                const formData = new FormData();
+                formData.append('record_id', recordId);
+                formData.append('old_path', relativePath);
+                formData.append('new_path', newPath);
+                
+                fetch('/api/rename_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 更新显示
+                        const imageItems = document.querySelectorAll(`#existing-images-${recordId} .image-item`);
+                        if (imageItems[imageIndex]) {
+                            const nameElement = imageItems[imageIndex].querySelector('.image-name');
+                            const imgElement = imageItems[imageIndex].querySelector('.image-preview');
+                            
+                            if (nameElement) {
+                                nameElement.textContent = newFileName;
+                                nameElement.title = newFileName;
+                            }
+                            
+                            // 更新图片src
+                            if (imgElement) {
+                                const newUrl = baseUrl ? `${baseUrl}/${newPath}` : `/${newPath}`;
+                                imgElement.src = newUrl;
+                            }
+                            
+                            // 更新删除按钮的onclick属性
+                            const deleteBtn = imageItems[imageIndex].querySelector('.delete-image-btn');
+                            if (deleteBtn) {
+                                deleteBtn.setAttribute('onclick', `deleteImage(${recordId}, '${newUrl}')`);
+                            }
+                            
+                            // 更新重命名按钮的onclick属性
+                            const renameBtn = imageItems[imageIndex].querySelector('.rename-btn');
+                            if (renameBtn) {
+                                renameBtn.setAttribute('onclick', `renameImage(${recordId}, '${newUrl}', ${imageIndex})`);
+                            }
+                        }
+                        
+                        showMessage('图片重命名成功', 'success');
+                        
+                        // 重新加载该记录的照片显示以确保同步
+                        setTimeout(() => {
+                            loadSingleViolationPhotos(recordId);
+                        }, 500);
+                        
+                        // 如果有警告信息，则显示
+                        if (data.warning) {
+                            showMessage(data.message, 'info');
+                        }
+                    } else {
+                        showMessage('重命名失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('重命名图片失败:', error);
+                    showMessage('重命名图片失败，请稍后重试', 'error');
+                });
+            }
+        }
+        
+        function deleteImage(recordId, imagePath) {
+            if (confirm('确定要删除这张图片吗？此操作不可撤销。')) {
+                showMessage('正在删除图片...', 'info');
+                
+                // 将完整URL转换为相对路径
+                let relativePath = imagePath;
+                if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+                    try {
+                        // 使用URL对象更安全地提取路径部分
+                        const url = new URL(imagePath);
+                        relativePath = url.pathname;
+                    } catch (e) {
+                        console.error('URL解析失败:', e);
+                        showMessage('图片路径解析失败', 'error');
+                        return;
+                    }
+                }
+                
+                // 去掉开头的斜杠
+                if (relativePath.startsWith('/')) {
+                    relativePath = relativePath.substring(1);
+                }
+                
+                // 构建FormData发送删除请求
+                const formData = new FormData();
+                formData.append('record_id', recordId);
+                formData.append('image_path', relativePath);
+                
+                fetch('/api/delete_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 从显示中移除图片
+                        const imageItems = document.querySelectorAll(`#existing-images-${recordId} .image-item`);
+                        imageItems.forEach(item => {
+                            const img = item.querySelector('.image-preview');
+                            if (img && (img.src === imagePath || img.src.endsWith(relativePath))) {
+                                item.remove();
+                                showMessage('图片删除成功', 'success');
+                                // 重新加载该记录的照片显示
+                                setTimeout(() => {
+                                    loadSingleViolationPhotos(recordId);
+                                }, 500);
+                                return;
+                            }
+                        });
+                        
+                        // 检查是否还有图片
+                        const remainingImages = document.querySelectorAll(`#existing-images-${recordId} .image-item`);
+                        if (remainingImages.length === 0) {
+                            document.getElementById(`existing-images-${recordId}`).innerHTML = '<div style="font-size: 12px; color: #999; text-align: center; padding: 10px;">暂无图片</div>';
+                        }
+                        
+                        // 如果有警告信息，则显示
+                        if (data.warning) {
+                            showMessage(data.message, 'info');
+                        }
+                    } else {
+                        showMessage('删除失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除图片失败:', error);
+                    showMessage('删除图片失败，请稍后重试', 'error');
+                });
+            }
+        }
+        
+        // 编辑模式相关函数
+        function enterEditMode(recordId) {
+            // 隐藏显示元素，显示编辑表单
+            document.getElementById(`type-display-${recordId}`).style.display = 'none';
+            document.getElementById(`time-display-${recordId}`).style.display = 'none';
+            
+            const descDisplay = document.getElementById(`description-display-${recordId}`);
+            if (descDisplay) {
+                descDisplay.style.display = 'none';
+            }
+            
+            // 加载现有图片
+            loadExistingImages(recordId);
+            
+            document.getElementById(`edit-form-${recordId}`).style.display = 'block';
+            document.getElementById(`action-buttons-${recordId}`).style.display = 'none';
+            document.getElementById(`edit-buttons-${recordId}`).style.display = 'flex';
+            
+            // 滚动到编辑区域
+            document.getElementById(`violation-${recordId}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        function cancelEdit(recordId) {
+            // 恢复显示元素，隐藏编辑表单
+            document.getElementById(`type-display-${recordId}`).style.display = 'inline-block';
+            document.getElementById(`time-display-${recordId}`).style.display = 'block';
+            
+            const descDisplay = document.getElementById(`description-display-${recordId}`);
+            if (descDisplay) {
+                descDisplay.style.display = 'block';
+            }
+            
+            document.getElementById(`edit-form-${recordId}`).style.display = 'none';
+            document.getElementById(`action-buttons-${recordId}`).style.display = 'flex';
+            document.getElementById(`edit-buttons-${recordId}`).style.display = 'none';
+        }
+        
+        function saveViolation(recordId) {
+            // 获取编辑后的值
+            const violationType = document.getElementById(`type-input-${recordId}`).value;
+            const location = document.getElementById(`location-input-${recordId}`).value.trim();
+            const description = document.getElementById(`description-input-${recordId}`).value.trim();
+            
+            // 验证必填字段
+            if (!location) {
+                showMessage('请输入违规地点', 'error');
+                document.getElementById(`location-input-${recordId}`).focus();
+                return;
+            }
+            
+            // 检查是否有新图片要上传
+            const newImageInput = document.getElementById(`new-image-${recordId}`);
+            const hasNewImage = newImageInput && newImageInput.files && newImageInput.files.length > 0;
+            
+            if (hasNewImage) {
+                // 如果有新图片，先上传图片
+                const formData = new FormData();
+                formData.append('image', newImageInput.files[0]);
+                formData.append('record_id', recordId);
+                
+                showMessage('正在上传图片...', 'info');
+                
+                fetch('/api/upload_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(uploadData => {
+                    if (uploadData.success) {
+                        console.log('图片上传成功:', uploadData);
+                        // 图片上传成功后，更新文本信息
+                        updateViolationData(recordId, violationType, location, description);
+                    } else {
+                        showMessage('图片上传失败: ' + uploadData.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('图片上传失败:', error);
+                    showMessage('图片上传失败', 'error');
+                });
+            } else {
+                // 没有新图片，直接更新文本信息
+                updateViolationData(recordId, violationType, location, description);
+            }
+        }
+        
+        function updateViolationData(recordId, violationType, location, description) {
+            // 构建更新数据
+            const updateData = {
+                violation_type: violationType,
+                location: location
+            };
+            
+            if (description) {
+                updateData.description = description;
+            }
+            
+            // 发送更新请求
+            console.log('正在发送更新请求:', updateData);
+            fetch(`/api/violation/${recordId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => {
+                console.log('收到响应:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('响应数据:', data);
+                if (data.success) {
+                    // 更新显示内容
+                    document.getElementById(`type-display-${recordId}`).textContent = `🚫 ${violationType}`;
+                    document.getElementById(`location-time-display-${recordId}`).textContent = `📍 ${location}`;
+                    
+                    const descDisplay = document.getElementById(`description-display-${recordId}`);
+                    if (descDisplay) {
+                        if (description) {
+                            descDisplay.textContent = description;
+                            descDisplay.style.display = 'block';
+                        } else {
+                            descDisplay.style.display = 'none';
+                        }
+                    }
+                    
+                    // 重新加载当前记录的照片以显示新上传的图片
+                    setTimeout(() => {
+                        loadSingleViolationPhotos(recordId);
+                    }, 500);
+                    
+                    // 退出编辑模式
+                    cancelEdit(recordId);
+                    
+                    // 显示成功消息
+                    showMessage('记录更新成功', 'success');
+                } else {
+                    showMessage(data.message || '更新失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('更新失败:', error);
+                showMessage('更新失败，请稍后重试', 'error');
+            });
+        }
+        
+        // ESC键关闭模态框和退出编辑模式
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+                
+                // 检查是否有编辑模式激活，如果有则退出
+                const editForms = document.querySelectorAll('[id^="edit-form-"]');
+                editForms.forEach(form => {
+                    if (form.style.display === 'block') {
+                        const recordId = form.id.replace('edit-form-', '');
+                        cancelEdit(recordId);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

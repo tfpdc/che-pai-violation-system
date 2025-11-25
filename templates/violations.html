@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>违停记录列表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4facfe;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .violation-list {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .violation-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s;
+        }
+        
+        .violation-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .violation-item:last-child {
+            border-bottom: none;
+        }
+        
+        .violation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .license-plate {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+        }
+        
+        .violation-info {
+            margin-bottom: 10px;
+        }
+        
+        .location {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .timestamp {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .violation-type {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .description {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .violation-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .images-container {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .violation-image {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .violation-image:hover {
+            transform: scale(1.05);
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+        
+        .edit-btn, .delete-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            text-align: center;
+        }
+        
+        .edit-btn {
+            background: #4facfe;
+            color: white;
+        }
+        
+        .edit-btn:hover {
+            background: #3d8bfd;
+            transform: translateY(-1px);
+        }
+        
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .record-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 25px;
+            transition: transform 0.2s;
+        }
+        
+        .record-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .filter-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filter-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 违停记录列表</h1>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">总记录数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="todayCount">0</div>
+                    <div class="stat-label">今日新增</div>
+                </div>
+            </div>
+            <a href="/record" class="record-btn">➕ 录入违停</a>
+        </div>
+        
+        <div class="filter-bar">
+            <input type="text" class="filter-input" id="searchInput" 
+                   placeholder="搜索车牌号、地点或违停类型...">
+        </div>
+        
+        <div class="violation-list" id="violationList">
+            <div class="empty-state">
+                <div class="empty-state-icon">🚗</div>
+                <p>暂无违停记录</p>
+            </div>
+        </div>
+        
+        <a href="javascript:location.reload()" class="back-link">🔄 刷新记录</a>
+    </div>
+
+    <script>
+        let violations = [];
+        
+        function loadViolations() {
+            fetch('/api/violations')
+                .then(response => response.json())
+                .then(data => {
+                    violations = data;
+                    displayViolations(violations);
+                    updateStats();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+        
+        function displayViolations(violationsToShow) {
+            const listContainer = document.getElementById('violationList');
+            
+            if (violationsToShow.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🚗</div>
+                        <p>暂无违停记录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listContainer.innerHTML = violationsToShow.map(violation => {
+                // 处理图片显示
+                let imagesHtml = '';
+                if (violation.images) {
+                    try {
+                        const images = JSON.parse(violation.images);
+                        if (images && images.length > 0) {
+                            imagesHtml = images.map(img => 
+                                `<img src="${img}" class="violation-image" onclick="viewImage('${img}')" alt="违停图片">`
+                            ).join('');
+                        }
+                    } catch (e) {
+                        // 如果不是JSON格式，尝试直接显示
+                        if (violation.images) {
+                            imagesHtml = `<img src="${violation.images}" class="violation-image" onclick="viewImage('${violation.images}')" alt="违停图片">`;
+                        }
+                    }
+                }
+                
+                return `
+                <div class="violation-item">
+                    <div class="violation-header">
+                        <div class="license-plate" onclick="window.location.href='/license_plate/${violation.license_plate}">${violation.license_plate}</div>
+                    </div>
+                    
+                    <div class="violation-info">
+                        <div class="location">📍 ${violation.location}</div>
+                        <div class="timestamp">⏰ ${formatDate(violation.created_at)}</div>
+                    </div>
+                    
+                    <div class="violation-type">${violation.violation_type}</div>
+                    
+                    ${violation.description ? `<div class="description">${violation.description}</div>` : ''}
+                    
+                    <div class="violation-footer">
+                        <div class="images-container">
+                            ${imagesHtml}
+                        </div>
+                        <div class="action-buttons">
+                            <a href="/edit/${violation.id}" class="edit-btn">✏️ 编辑</a>
+                            <button class="delete-btn" onclick="deleteViolation(${violation.id})">🗑️ 删除</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                return `今天 ${date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}`;
+            } else if (diffDays === 1) {
+                return `昨天 ${date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}`;
+            } else {
+                return date.toLocaleDateString('zh-CN') + ' ' + 
+                       date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('totalCount').textContent = violations.length;
+            
+            const today = new Date().toDateString();
+            const todayViolations = violations.filter(v => 
+                new Date(v.created_at).toDateString() === today
+            );
+            document.getElementById('todayCount').textContent = todayViolations.length;
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            if (searchTerm === '') {
+                displayViolations(violations);
+                return;
+            }
+            
+            const filteredViolations = violations.filter(violation => 
+                violation.license_plate.toLowerCase().includes(searchTerm) ||
+                violation.location.toLowerCase().includes(searchTerm) ||
+                violation.violation_type.toLowerCase().includes(searchTerm) ||
+                (violation.description && violation.description.toLowerCase().includes(searchTerm))
+            );
+            
+            displayViolations(filteredViolations);
+        });
+        
+        function viewImage(imageSrc) {
+            // 创建图片查看器
+            const viewer = document.createElement('div');
+            viewer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                cursor: pointer;
+            `;
+            
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.style.cssText = `
+                max-width: 90%;
+                max-height: 90%;
+                object-fit: contain;
+                border-radius: 10px;
+            `;
+            
+            viewer.appendChild(img);
+            viewer.onclick = () => document.body.removeChild(viewer);
+            document.body.appendChild(viewer);
+        }
+        
+        function deleteViolation(id) {
+            if (confirm('确定要删除这条违停记录吗？')) {
+                fetch(`/api/delete_violation/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('删除成功');
+                        loadViolations();
+                    } else {
+                        alert('删除失败：' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败');
+                });
+            }
+        }
+        
+        loadViolations();
+        setInterval(loadViolations, 30000);
+    </script>
+</body>
+</html>
