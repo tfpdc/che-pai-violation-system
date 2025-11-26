@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
 import io
 import base64
+import pytz
 
 # 设置模板文件夹路径（相对于app.py的位置）
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
@@ -183,7 +184,7 @@ app.config['UPLOAD_FOLDER'] = upload_dir
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
 # 车牌号验证正则表达式（标准7-8位车牌：省份简称1位 + 字母1位 + 5-6位数字/字母）
-LICENSE_PLATE_PATTERN = re.compile(r'^[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-Z0-9]{4,5}$')
+LICENSE_PLATE_PATTERN = re.compile(r'^[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-Z0-9]{4,6}$')
 
 def validate_license_plate(plate):
     """验证车牌号格式"""

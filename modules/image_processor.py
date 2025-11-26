@@ -124,7 +124,8 @@ def rename_compressed_file(old_file_path, license_plate, index):
         
         # 生成车牌号前缀（使用完整车牌号）
         if license_plate and license_plate.strip():
-            plate_prefix = license_plate.replace(' ', '')
+            # 确保车牌号可以完整地作为文件名的一部分
+            plate_prefix = "".join(c for c in license_plate if c.isalnum() or c in "._-") 
         else:
             plate_prefix = "UNKNOWN"
         
@@ -163,7 +164,11 @@ def save_uploaded_file(file, license_plate=None):
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]  # 精确到毫秒
             
             # 生成车牌号前缀（使用完整车牌号）
-            plate_prefix = license_plate.replace(' ', '') if license_plate and license_plate.strip() else "UNKNOWN"
+            if license_plate and license_plate.strip():
+                # 确保车牌号可以完整地作为文件名的一部分
+                plate_prefix = "".join(c for c in license_plate if c.isalnum() or c in "._-")
+            else:
+                plate_prefix = "UNKNOWN"
             
             # 查找同车牌同时间的最大序号
             base_name = f"{plate_prefix}_{timestamp.split('_')[0]}_{timestamp.split('_')[1]}"  # 使用秒级时间戳作为基础
